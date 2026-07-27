@@ -186,6 +186,18 @@
   table.memtab td.obscell.aberto .evfull { display:block; margin-top:6px; cursor:pointer; }
   .memhint { font-family:'Inter',sans-serif; font-size:11px; line-height:1.5; color:var(--ink-soft); margin:8px 0 2px; }
   .memtab-scroll { overflow-x:auto; }
+  /* Nota tecnica (o que foi aplicado em cada janela) -- estilo de nota de rodape de conta judicial */
+  .notatec { margin-top:14px; border-top:1px solid var(--rule-strong); padding-top:9px; }
+  .notatec .nt-h { font-family:'Inter',sans-serif; font-size:10px; letter-spacing:.06em; text-transform:uppercase;
+                   color:var(--ink-mute); margin-bottom:7px; }
+  .notatec table { width:100%; border-collapse:collapse; font-size:11px; }
+  .notatec td { padding:4px 6px 4px 0; vertical-align:top; border-bottom:1px dotted var(--rule); }
+  .notatec td.nt-jan { white-space:nowrap; font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:var(--ink-2); width:1%; }
+  .notatec td.nt-o { color:var(--ink-soft); }
+  .notatec .nt-fonte { display:inline-block; font-size:9.5px; letter-spacing:.03em; text-transform:uppercase;
+                       padding:1px 5px; border:1px solid var(--rule-strong); color:var(--ink-mute); margin-left:5px; }
+  .notatec .nt-fonte.autos { color:var(--gold-deep); border-color:var(--gold); }
+  .notatec .nt-rodape { font-size:10px; color:var(--ink-mute); margin-top:7px; line-height:1.5; }
   table.jmtab input, table.jmtab select { font-size:10.5px; padding:3px 4px; }
   table.jmtab input[type=date] { width:112px; } table.jmtab input[type=number] { width:70px; }
   .btn { font-size:11px; padding:5px 11px; border:1px solid var(--rule-strong); background:#fff; cursor:pointer; color:var(--ink-soft); font-family:'Inter',sans-serif; }
@@ -513,6 +525,10 @@
               <div class="res"><span class="k">Valor da causa (A)</span><span class="v" id="rPrincipal">—</span></div>
               <div id="decompFases"></div>
               <div class="res tot"><span class="k">Valor de face hoje</span><span class="v" id="rValorFaceDecomp">—</span></div>
+              <!-- Nota tecnica: o que foi aplicado em cada janela e com base em que. Pedido do
+                   Gabriel (2026-07-27), no formato que as contadorias usam abaixo do resumo. O
+                   valor esta' em separar o que veio da TABELA do que veio dos AUTOS. -->
+              <div id="notaTecnica" class="notatec hide"></div>
             </div>
           </div>
 
@@ -1323,6 +1339,44 @@ que atravessa o corte EC 136 carrega a flag <code>f5-pendente-conta-oraculo-sico
 exige um demonstrativo SICOM/TRF real de precatório atravessando set/2025 (ver §7 e §9). <strong>Não usar
 como conta líquida sem esse batimento.</strong></p>
 <hr />
+<h3>A troca de regime da EC 136 muda a BASE dos juros — não só o índice</h3>
+<p>Verificado nas séries em 2026-07-27, porque a pergunta aparece sempre: a <strong>taxa legal</strong> do art. 406
+(Lei 14.905/2024) é, de fato, a <strong>Selic menos o IPCA-15</strong> — deduzindo o IPCA-15 da competência
+<strong>anterior</strong> (desvio máximo medido: 0,0062 p.p. em 11 meses). Então, em percentual,
+<code>IPCA-15 + taxa legal ≈ Selic</code>, e a troca de regime parece neutra.</p>
+<p><strong>Ela não é</strong> — porque as duas incidem sobre bases diferentes:</p>
+<table>
+<thead>
+<tr>
+<th>Regime</th>
+<th>Correção incide sobre</th>
+<th>Juros incidem sobre</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>EC 113</strong> (dez/2021 → corte)</td>
+<td>— (a Selic engloba)</td>
+<td><strong>principal corrigido + juros já acumulados</strong> (C + G) — item 4.5.1.1 NOTA 2</td>
+</tr>
+<tr>
+<td><strong>Pós-EC 136</strong> (Código Civil)</td>
+<td>principal corrigido (C)</td>
+<td><strong>principal corrigido</strong> (C), como todo juro de mora</td>
+</tr>
+</tbody>
+</table>
+<p>A Selic da EC 113 é a <strong>exceção</strong>: ela é a única rubrica que incide sobre o consolidado. Encerrado esse
+regime, os juros voltam à base de sempre — o principal corrigido —, e <strong>os juros já acumulados saem da
+base</strong>. Não é anomalia: juros sobre juros seria anatocismo; a peculiaridade era a EC 113.</p>
+<p>Consequência prática, medida no caso Data Traffic (crédito antigo, com juros acumulados maiores que o
+principal corrigido): C = R$ 5,80 MM e G = R$ 8,32 MM, então a base cai de <strong>R$ 14,11 MM</strong> (C+G, sob a
+EC 113) para <strong>R$ 5,54 MM</strong> (C, sob o Código Civil) — <strong>queda de 61%</strong>. Os mesmos ~12,6% de taxa rendem
+R$ 434 mil em vez de R$ 1,11 MM. Parte disso volta pela correção, que passa a correr de novo (o IPCA-15
+adicionou R$ 255 mil ao principal corrigido no mesmo período), mas não tudo.</p>
+<p><strong>Portanto:</strong> quanto mais antigo o crédito — isto é, quanto maior G em relação a C — mais o corte da
+EC 136 reduz o valor de face. Em crédito novo (G pequeno) o efeito é quase nulo. Isso precisa estar
+claro em qualquer comparação contra conta de terceiro que não aplique o corte.</p>
 <h3>Modo de batimento: ignorar o corte da EC 136</h3>
 <p>Contas emitidas sob o <strong>Manual da JF Ed. 2022</strong> não conhecem a EC 136/2025 e seguem aplicando a Selic
 única até a data do cálculo. Para <strong>reproduzir</strong> uma conta assim — conferir se o número de terceiro
@@ -5567,6 +5621,83 @@ function renderDecompFasesTela(cr, res) {
   }
   $('decompFases').innerHTML = html;
   $('rValorFaceDecomp').textContent = fmtBRL(g.valorFace);
+  renderNotaTecnica(cr, res);
+}
+
+// ---------------------------------------------------------------- nota tecnica
+// "O que foi aplicado em cada janela, e com base em que" -- o formato que as contadorias poem
+// abaixo do resumo da conta. O que importa aqui NAO e' repetir os numeros (isso a decomposicao ja'
+// faz): e' dizer, para cada trecho, se a regra veio da TABELA (Manual CJF/Res. CNJ) ou dos AUTOS
+// (taxa fixada no titulo). Quem confere a conta precisa saber de onde cada pedaco saiu.
+const _NT_FUNDAMENTO = {
+  'manual':          ['taxa fixada no título', 'autos'],
+  'G-ate-2021':      ['tabela de juros do Manual CJF (item 4.2.2)', 'tabela'],
+  'H-selic-EC113':   ['Selic única — art. 3º da EC 113/2021 (engloba juros e correção)', 'tabela'],
+  'I-fase-nova':     ['taxa legal — art. 406 do CC (Lei 14.905/2024)', 'tabela'],
+  'I-EC136-2pct':    ['IPCA + 2% a.a. — EC 136/2025 (precatório expedido)', 'tabela'],
+};
+function _ntTaxa(l){
+  if (!l.taxa_juros_mes) return null;
+  const pct = l.taxa_juros_mes * 100;
+  const s = (Math.round(pct * 10000) / 10000).toString().replace('.', ',');
+  return s + '% a.m.';
+}
+function renderNotaTecnica(cr, res){
+  const box = $('notaTecnica');
+  if (!box) return;
+  const mem = (res && res.memoria) || [];
+  if (!mem.length){ box.classList.add('hide'); box.innerHTML = ''; return; }
+  // agrupa competencias CONTIGUAS que compartilham indice + rubrica + taxa
+  const grupos = [];
+  for (const l of mem){
+    // Agrupa por REGRA, nao por taxa: quando os juros vem de serie (poupanca, Selic, taxa legal)
+    // a taxa muda todo mes e quebrar por ela produziria uma linha por competencia -- ilegivel e
+    // sem informacao nova. So' a taxa do TITULO entra na chave (ali a taxa E' a regra), arredondada
+    // para nao quebrar por ruido de ponto flutuante.
+    const _serie = (l.rubrica_juros || '') !== 'manual';
+    const chave = [l.indice, l.rubrica_juros || '',
+                   _serie ? 'serie' : Math.round((l.taxa_juros_mes || 0) * 1e6)].join('|');
+    const ult = grupos[grupos.length - 1];
+    if (ult && ult.chave === chave) { ult.fim = l.competencia; continue; }
+    grupos.push({chave: chave, ini: l.competencia, fim: l.competencia, l: l});
+  }
+  let linhas = '';
+  let temAutos = false;
+  for (const g2 of grupos){
+    const l = g2.l;
+    const jan = _fmtCompBR(g2.ini) + (g2.fim !== g2.ini ? ' → ' + _fmtCompBR(g2.fim) : '');
+    const partes = [];
+    // correcao
+    if (l.fator_correcao_mes === 1.0){
+      if ((l.rubrica_juros || '') === 'H-selic-EC113') partes.push('correção englobada pela Selic');
+      else partes.push('sem correção no período');
+    } else {
+      // o rotulo do indice vem do motor com '--' ASCII; na tela vira travessao
+      partes.push('correção: <strong>' + escapeHtml((l.indice || '—').replace(' -- ', ' — ')) + '</strong>');
+    }
+    // juros
+    const fund = _NT_FUNDAMENTO[l.rubrica_juros] || null;
+    if (!l.taxa_juros_mes && (l.rubrica_juros || '') !== 'H-selic-EC113'){
+      partes.push('sem juros no período');
+    } else if (fund){
+      const taxa = _ntTaxa(l);
+      const serieDeJuros = l.rubrica_juros !== 'manual' && l.rubrica_juros !== 'H-selic-EC113';
+      const rot = (l.rubrica_juros === 'H-selic-EC113')
+        ? fund[0]
+        : 'juros: <strong>' + (serieDeJuros ? 'conforme a série' : (taxa || '—')) + '</strong> — ' + fund[0];
+      const cls = fund[1] === 'autos' ? 'nt-fonte autos' : 'nt-fonte';
+      if (fund[1] === 'autos') temAutos = true;
+      partes.push(rot + '<span class="' + cls + '">' + fund[1] + '</span>');
+    }
+    linhas += '<tr><td class="nt-jan">' + jan + '</td><td class="nt-o">' + partes.join(' · ') + '</td></tr>';
+  }
+  const rodape = temAutos
+    ? 'As linhas marcadas <span class="nt-fonte autos">autos</span> aplicam taxa fixada no título do processo; as demais seguem a tabela oficial (Manual de Cálculos do CJF / Res. CNJ 303, conforme o trilho).'
+    : 'Todas as regras acima vêm da tabela oficial (Manual de Cálculos do CJF / Res. CNJ 303, conforme o trilho) — nenhuma taxa foi declarada a partir dos autos.';
+  box.innerHTML = '<div class="nt-h">O que foi aplicado em cada janela</div>' +
+                  '<table>' + linhas + '</table>' +
+                  '<div class="nt-rodape">' + rodape + '</div>';
+  box.classList.remove('hide');
 }
 
 // Espelha renderDecompFasesTela para o relatório PDF: sem hover (papel não tem hover), então o
