@@ -2713,8 +2713,29 @@ function fator_correcao_mes(regime, comp, prev, base, cfg, cr) {
     if (_tjrj(cr)) {
       const par = _tabela_tjrj(cr, base);
       const tab = par[0];
+      // FRONTEIRA EC113 -- espelho de correcao.py (corrigido la' em 2026-07-30; este port
+      // ficou para tras e reintroduziu o bug no site). A cadeia FAZENDARIA da CGJ termina em
+      // 2021-11 com fator 1,0000000000: NAO e' serie incompleta, e' CONGELAMENTO por desenho
+      // do proprio tribunal -- dali em diante a monetizacao passa a' coluna separada de FATOR
+      // SELIC (p.8 do PDF de Fazenda), que o motor ja' aplica por soma simples, sem tabela.
+      // Ja' o motor mantem dez/2021 sob o indice antigo (`_vigente_apos_norma`, mes cheio).
+      // As duas convencoes colidem exatamente em dez/2021, e sem este tratamento o resultado
+      // era um SerieIncompleta que tornava INCALCULAVEL toda a classe de creditos do TJRJ com
+      // data-base anterior a dez/2021.
+      //
+      // Resolucao (identica a' do Python): alem do ultimo mes publicado, o fator da cadeia e'
+      // 1,0 (congelado) -- que e' o que a propria tabela diz. Nao se mexe na fronteira
+      // juridica; le-se a tabela como o tribunal a escreveu.
+      const ultimo = Object.keys(tab).reduce(function (a, b) { return a > b ? a : b; });
+      if (comp > ultimo) {
+        const p = (prev < ultimo) ? prev : ultimo;   // min(prev, ultimo)
+        if (tab[p] === undefined || tab[ultimo] === undefined) {
+          throw new SerieIncompleta("tabela do TJRJ sem a competencia " + (tab[p] === undefined ? p : ultimo));
+        }
+        return [tab[p] / tab[ultimo], par[1] + " [cadeia congelada em " + ultimo + " -- CGJ]"];
+      }
       if (tab[prev] === undefined || tab[comp] === undefined) {
-        throw new Error("SerieIncompleta: tabela do TJRJ sem a competencia " + (tab[prev] === undefined ? prev : comp));
+        throw new SerieIncompleta("tabela do TJRJ sem a competencia " + (tab[prev] === undefined ? prev : comp));
       }
       // DECRESCENTE: fator do mes = prev/comp (inverso do TJSP)
       return [tab[prev] / tab[comp], par[1]];
