@@ -4345,6 +4345,38 @@ function agruparPorFase(cr, res) {
   return { conhecimento, precatorio, valorFimConhecimento, valorFace: res.valor_corrigido_hoje };
 }
 
+// ============================================================ Handoff: calculadora -> simulador
+// Exibição/integração, NÃO-cálculo (mesma natureza de agruparPorFase/honorarioResumo): decide os
+// dois valores que o simulador recebe pela query string, porque eles NÃO são o mesmo número.
+//
+//   vf (#face)       = "Valor atualizado" — o estoque do crédito na data do cálculo. Sempre.
+//   vc (#valorCausa) = campo cuja SEMÂNTICA muda com a fase do crédito:
+//     • não expedido (direito creditório) -> "Valor da causa": o principal na data-base, que no
+//       simulador é a base do juro simples PRÉ-precatório;
+//     • expedido (precatório) -> "Valor requisitado": o valor com que o precatório foi INSCRITO,
+//       isto é, o consolidado ao fim da fase de conhecimento (agruparPorFase().valorFimConhecimento
+//       — o mesmo número que a tela mostra como "Valor ao fim do conhecimento").
+//
+// Por que o requisitado e não o atualizado (bug reportado 2026-08-26, caso Alvadi Christopholli):
+// no simulador o #valorCausa do precatório é a BASE do juro simples IPCA+spread da fase precatório
+// (simulador/engine.js: `causa` -> `reqBase`, aplicado em `jur = (idx+spread)*dc/365*(reqBase+preAcum)`).
+// Mandar o valor de HOJE embute nessa base tudo que o precatório já correu desde a expedição, e a
+// projeção passa a render juro simples sobre um número que não existia na inscrição. Num crédito
+// expedido há poucos meses o erro é pequeno em %, mas cresce com a distância expedição->cálculo e
+// entra direto na TIR/MOIC — sempre para cima.
+function handoffSimulador(cr, res) {
+  const ehPrec = cr.data_expedicao !== null && cr.data_expedicao !== undefined;
+  // Fallback defensivo: se a decomposição não fechar um valor de conhecimento (ex.: corte_ec136
+  // "ignorar", em que não existe fase precatório), cai no face — mesmo comportamento de antes,
+  // em vez de mandar 0 e zerar a base do simulador.
+  let vc = cr.valor_historico;
+  if (ehPrec) {
+    const fim = agruparPorFase(cr, res).valorFimConhecimento;
+    vc = (fim > 0) ? fim : res.valor_corrigido_hoje;
+  }
+  return { tipo: ehPrec ? "prec" : "dc", vf: res.valor_corrigido_hoje, vc: pyRound(vc, 2) };
+}
+
 // ============================================================ Exibição: resumo de honorários (adicionado vs embutido)
 function honorarioResumo(valorFace, honorario, modo) {
   const embutido = modo === "embutido";
@@ -4401,7 +4433,7 @@ const API = {
   taxa_juros_mes, taxa_juros_mes_efetiva, selic_soma, aplica_teto_ec136, em_graca,
   juros_manual_no_mes, flags_natureza_verba, flags_previdenciario, flags_variante_tabela,
   flags_regra_juros, _regra_e_competencia, _f5_expedido, _f5_selic_residual, _f5_expedido_selic_residual,
-  _regra_ativa, _termo_inicial_comp, _PRIMEIRO_MES, _EC136_2PCT, corrigir, honorario, agruparPorFase, honorarioResumo,
+  _regra_ativa, _termo_inicial_comp, _PRIMEIRO_MES, _EC136_2PCT, corrigir, honorario, agruparPorFase, honorarioResumo, handoffSimulador,
   valorLiquido,
 };
 if (typeof module !== "undefined" && module.exports) module.exports = API;
@@ -5989,14 +6021,16 @@ function abrirSimulador(){
   if (!ULTIMO){ toast('Calcule um crédito antes.'); return; }
   const cr = ULTIMO.cr, res = ULTIMO.res;
   const ehPrec = !!cr.data_expedicao;   // expedido -> Precatorio; senao -> Direito creditorio (conhecimento)
+  // vf/vc/tipo saem do motor (CalcEngine.handoffSimulador): o #valorCausa do simulador NAO e' o
+  // valor de hoje quando o credito ja' foi expedido -- e' o VALOR REQUISITADO (consolidado ao fim
+  // do conhecimento, o mesmo "Valor ao fim do conhecimento" da tela), porque no simulador esse
+  // campo e' a BASE do juro simples IPCA+spread da fase precatorio. Ver engine.js::handoffSimulador.
+  const ho = CalcEngine.handoffSimulador(cr, res);
   const q = new URLSearchParams();
-  q.set('vf', res.valor_corrigido_hoje);              // Valor atualizado (hoje) -> #face
-  q.set('tipo', ehPrec ? 'prec' : 'dc');              // modo do simulador conforme a fase do credito
+  q.set('vf', ho.vf);                                 // Valor atualizado (hoje) -> #face
+  q.set('tipo', ho.tipo);                             // modo do simulador conforme a fase do credito
   q.set('origem', 'calculadora');
-  // #valorCausa: conhecimento -> "Valor da causa" (principal na data-base); precatorio -> "Valor
-  // requisitado" (= face do recem-inscrito, base do IPCA+spread da fase precatorio).
-  const vc = ehPrec ? res.valor_corrigido_hoje : cr.valor_historico;
-  if (vc > 0) q.set('vc', vc);
+  if (ho.vc > 0) q.set('vc', ho.vc);                  // #valorCausa: requisitado (prec) / causa (DC)
   // honorario (mesmos ids/semantica nos dois; so' se preenchido)
   const hp = $('inHonorarioPct').value;
   if (hp !== '' && parseFloat(hp) > 0){ q.set('hp', hp); q.set('hm', $('inHonorarioModo').value); }
