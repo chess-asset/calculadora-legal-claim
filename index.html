@@ -2134,6 +2134,10 @@ function _tabela_tjrj(cr, base) {
 const _TJS_RES303_SERIE_NACIONAL = {
   "TJMT": "Res. CNJ 303/2019 (serie IPCA-E nacional; sem tabela de expurgos propria de MT para precatorio)",
   "TJ-MT": "Res. CNJ 303/2019 (serie IPCA-E nacional; sem tabela de expurgos propria de MT para precatorio)",
+  "TJMG": "Res. CNJ 303/2019 (as tabelas do CEPREC/TJMG se declaram implementacao dela; medido 0,02 ppm/link vs. serie nacional, ver base/tjmg/_fonte.md)",
+  "TJ-MG": "Res. CNJ 303/2019 (as tabelas do CEPREC/TJMG se declaram implementacao dela; medido 0,02 ppm/link vs. serie nacional, ver base/tjmg/_fonte.md)",
+  "TJCE": "Res. CNJ 303/2019 (o TJCE NAO publica tabela de fatores; a Resolucao arrolada nos seus proprios atos normativos e' a do CNJ)",
+  "TJ-CE": "Res. CNJ 303/2019 (o TJCE NAO publica tabela de fatores; a Resolucao arrolada nos seus proprios atos normativos e' a do CNJ)",
 };
 
 // ============================================================================================
@@ -2231,11 +2235,20 @@ function guarda_recusas_estadual(cr) {
       "(fazendaria, IPCA-E) so' cobre de jan/1992 em diante. Recusa (parecer (d))."
     );
   }
-  if (trilho === TRILHO_ESTADUAL_OUTRO_TJ && dbase < _REAL_INICIO) {
+  // Espelho de correcao.guarda_recusas_estadual (ad214e1, 2026-07-30): a recusa pre-Real alcanca
+  // TAMBEM os TJs roteados pela Res. 303 -- rotear pela serie IPCA-E nacional nao lhes da espinha
+  // propria antes de jul/1994, entao a conta segue indefensavel nesse trecho.
+  const _sem_espinha_pre_real = (
+    trilho === TRILHO_ESTADUAL_OUTRO_TJ
+    || Object.prototype.hasOwnProperty.call(
+         _TJS_RES303_SERIE_NACIONAL, String(cr.tribunal_origem || "").trim().toUpperCase())
+  );
+  if (_sem_espinha_pre_real && dbase < _REAL_INICIO) {
     throw new TrilhoEstadualRecusado(
-      "trilho estadual (TJ != TJSP) com data-base " + dbase + " anterior ao Real (jul/1994): os " +
-      "expurgos e conversoes monetarias pre-Real DIVERGEM por tribunal e a tabela propria " +
-      "desse TJ nao esta no acervo -- sem conta defensavel (parecer (d)). Recusa."
+      "trilho estadual (" + cr.tribunal_origem + ") com data-base " + dbase + " anterior ao Real " +
+      "(jul/1994): os expurgos e conversoes monetarias pre-Real DIVERGEM por tribunal e nao " +
+      "ha' espinha propria desse TJ cobrindo o periodo no acervo -- sem conta defensavel " +
+      "(parecer (d)). Recusa."
     );
   }
 }
@@ -2474,6 +2487,26 @@ function flags_trilho_estadual(cr, comps) {
         "(15/04/2025) nao foi reproduzido por nenhuma das tabelas em nenhuma convencao testada " +
         "-- o mais proximo e' a Lei 11.960 por diferenca (-0,096%). Ver base/tjrj/_fonte.md."
       ));
+      // Trecho ANUAL da cadeia da CGJ (1995 a 29/06/2009): DECISAO PENDENTE do gestor. Nao e'
+      // defeito de extracao nem divergencia motor-vs-tribunal: desde D-100 o motor REPRODUZ o
+      // tribunal. O ponto e' que a cadeia do TRIBUNAL nao adere ao art. 21-A, X.
+      if (comps.some(function (c) { return "1995-01" <= c && c <= "2009-06"; })) {
+        out.push(flag(
+          "tjrj-cadeia-anual-1995-2009: DECISAO PENDENTE (medido 2026-07-30) -- a janela toca 1995 a " +
+          "29/06/2009, e nesse trecho a cadeia da CGJ que este motor agora aplica e' ANUAL: um degrau por " +
+          "ano, sem corrigir NADA dentro do ano civil (os 11 links intra-ano valem exatamente " +
+          "1,0000000000, conferido sobre os fatores publicados). Isso NAO e' aderente ao art. 21-A, X, da " +
+          "Res. CNJ 303/2019, que manda IPCA-E MENSAL de 01/2001 a 09/12/2009. Ou seja: aqui o motor " +
+          "reproduz o TRIBUNAL PAGADOR, e e' o TRIBUNAL que diverge da regra do CNJ -- as duas reguas sao " +
+          "defensaveis, e a escolha nao e' do calculista. Divergencia MEDIDA contra o IPCA-E mensal: " +
+          "-1,82% em 01/2001->06/2009 e +4,94% em 07/2003->06/2009. ATENCAO: o SINAL INVERTE conforme a " +
+          "sub-janela, porque degrau anual nao e' indice mensal -- NAO se pode presumir que o resultado " +
+          "esta alto nem baixo. COMO TRATAR (a definir, decisao do gestor): a regua do TJRJ e' a que " +
+          "EFETIVAMENTE PAGA; a do CNJ e' a que se sustenta em impugnacao. Em aquisicao, o conservadorismo " +
+          "consiste em adotar o lado DESFAVORAVEL na sub-janela concreta do credito, e nao um corte fixo. " +
+          "Nenhum ajuste foi aplicado a este resultado."
+        ));
+      }
     } else {
       out.push(flag(
         "trilho-estadual-tjsp: correcao pela Tabela DEPRE (IPCA-E) do TJSP (correcao-only, " +
@@ -2698,7 +2731,7 @@ function fator_correcao_mes(regime, comp, prev, base, cfg, cr) {
     return [_exigir(base.coef_previdenciario, comp, "coef_previdenciario") / _exigir(base.coef_previdenciario, prev, "coef_previdenciario"), idx];
   }
   if (regime === "F2_TR") {
-    return [base.tr_coef[comp] / base.tr_coef[prev], "TR"];
+    return [_exigir(base.tr_coef, comp, "tr_coef") / _exigir(base.tr_coef, prev, "tr_coef"), "TR"];
   }
   // Trilho ESTADUAL TJSP (E7): a espinha de correcao pre-EC113 e' a Tabela DEPRE (IPCA-E), nao o coef
   // CJF. Diferenca decisiva (parecer (c) #3): a DEPRE NAO congela em jan/2003-jun/2009 (roda IPCA-E
@@ -2740,7 +2773,8 @@ function fator_correcao_mes(regime, comp, prev, base, cfg, cr) {
       // DECRESCENTE: fator do mes = prev/comp (inverso do TJSP)
       return [tab[prev] / tab[comp], par[1]];
     }
-    return [base.coef_tjsp_depre[comp] / base.coef_tjsp_depre[prev], "IPCA-E (DEPRE/TJSP)"];
+    return [_exigir(base.coef_tjsp_depre, comp, "coef_tjsp_depre")
+      / _exigir(base.coef_tjsp_depre, prev, "coef_tjsp_depre"), "IPCA-E (DEPRE/TJSP)"];
   }
   // Dor D-b: espinha propria do servidor FEDERAL (coef_servidor, IPCA-E) que NAO congela 2003-2009.
   if (cr !== null && _servidor_federal(cr)
@@ -2813,7 +2847,8 @@ function fator_correcao_mes(regime, comp, prev, base, cfg, cr) {
     return [base.coef_servidor[comp] / base.coef_servidor[prev], idxc];
   }
   const idx = regime === "F5" ? "IPCA (CJF)" : "ORTN..IPCA-E (CJF)";
-  return [base.coef_naotrib[comp] / base.coef_naotrib[prev], idx];
+  return [_exigir(base.coef_naotrib, comp, "coef_naotrib")
+    / _exigir(base.coef_naotrib, prev, "coef_naotrib"), idx];
 }
 
 // Indice de correcao declarado no titulo para esta competencia, ou null (D-099). Sem pro-rata por
@@ -4411,6 +4446,32 @@ function valorLiquido(bruto, descontos, valorBase) {
 }
 
 // ============================================================ export (node + browser)
+
+// ============================================================ cobertura declarada das series
+// A tela anunciava `gerado_em` -- a data em que o ciclo montou o JSON -- como se fosse a
+// cobertura dos indices. Nao e': a espinha federal (`coef_correcao_naotrib`) e' importada A MAO
+// do portal do CJF e fica tipicamente 1 a 2 competencias atras do calendario, enquanto as series
+// vivas (SGS) chegam no dia. Declarar `gerado_em` afirma uma cobertura que nao existe -- e foi
+// exatamente sob essa afirmacao que o site zerou o calculo na data de hoje (revisao 2026-09-01).
+function coberturaSeries(series) {
+  const espinha = series.coef_correcao_naotrib || {};
+  let ultima = null;
+  for (const c in espinha) { if (ultima === null || c > ultima) ultima = c; }
+  const geradoEm = series.gerado_em || null;
+  const compGerado = geradoEm ? String(geradoEm).slice(0, 7) : null;
+  return {
+    ultimaCompetencia: ultima,
+    geradoEm: geradoEm,
+    defasado: !!(ultima && compGerado && ultima < compGerado),
+  };
+}
+
+// A data de calculo esta dentro do que as series cobrem? (competencia, nao dia.)
+function dataCobertaPor(dataISO, cobertura) {
+  if (!dataISO || !cobertura || !cobertura.ultimaCompetencia) return false;
+  return String(dataISO).slice(0, 7) <= cobertura.ultimaCompetencia;
+}
+
 const API = {
   pyRound,
   Natureza, TipoRelacao, NaturezaVerba, Ente, NaturezaDevedor,
@@ -4435,6 +4496,7 @@ const API = {
   flags_regra_juros, _regra_e_competencia, _f5_expedido, _f5_selic_residual, _f5_expedido_selic_residual,
   _regra_ativa, _termo_inicial_comp, _PRIMEIRO_MES, _EC136_2PCT, corrigir, honorario, agruparPorFase, honorarioResumo, handoffSimulador,
   valorLiquido,
+  coberturaSeries, dataCobertaPor,
 };
 if (typeof module !== "undefined" && module.exports) module.exports = API;
 if (typeof window !== "undefined") window.CalcEngine = API;
@@ -4540,6 +4602,10 @@ function parseNumeroFlexivel(str) {
   } else if (hasComma) {
     s = s.replace(",", ".");
   }
+  // `parseFloat` para no primeiro caractere invalido e devolve o PREFIXO: "100000abc" virava
+  // 100000 e a linha saia como `ok` (revisao 2026-09-01). Num lote ninguem reconfere linha a
+  // linha, entao entrada malformada tem de virar NaN -- que o chamador ja' trata como erro.
+  if (!/^-?\d+(\.\d+)?$/.test(s)) return NaN;
   return parseFloat(s);
 }
 
@@ -5301,7 +5367,11 @@ function parseBRLInput(str){
   let s = String(str).trim();
   if (s === '') return NaN;
   if (s.indexOf(',') >= 0) s = s.replace(/\./g, '').replace(',', '.');
-  s = s.replace(/[^0-9.\-]/g, '');
+  // Antes: `replace(/[^0-9.\-]/g,'')` APAGAVA o lixo e o `parseFloat` engolia o resto -- "1.2.3"
+  // virava 1.2 e "12-3" virava 12, sem erro (revisão 2026-09-01). Agora só o RUÍDO de moeda
+  // (R$, espaço, NBSP) é removido; qualquer outro caractere invalida a entrada.
+  s = s.replace(/[R$\s ]/g, '');
+  if (!/^-?\d+(\.\d+)?$/.test(s)) return NaN;
   return parseFloat(s);
 }
 // Reformata o campo de valor em formato contábil ao sair do foco (não interfere na digitação).
@@ -6647,11 +6717,33 @@ function copiarLinkCaso(){
     .catch(function(){ prompt('Copie o link do caso:', url); });
 }
 
+// Último dia civil da competência "AAAA-MM" (a data de cálculo é um dia, a cobertura é um mês).
+function _ultimoDiaDaCompetencia(comp){
+  if (!comp) return hojeISO();
+  const ano = +comp.slice(0,4), mes = +comp.slice(5,7);
+  const ultimo = new Date(Date.UTC(ano, mes, 0)).getUTCDate();
+  return comp + '-' + String(ultimo).padStart(2,'0');
+}
+
 // ---------------------------------------------------------------- boot
 function boot(){
-  $('databanner').textContent = 'Índices atualizados até ' + SERIES_DATA.gerado_em;
+  // Cobertura REAL das séries, não a data em que o ciclo montou o JSON (revisão 2026-09-01): a
+  // espinha federal vem à mão do CJF e fica 1-2 competências atrás do calendário. Anunciar
+  // `gerado_em` afirmava uma cobertura inexistente -- e era sob essa afirmação que o cálculo na
+  // data de hoje saía R$ 0,00.
+  const _cob = CalcEngine.coberturaSeries(SERIES_DATA);
+  const _compBR = _cob.ultimaCompetencia
+    ? _cob.ultimaCompetencia.slice(5, 7) + '/' + _cob.ultimaCompetencia.slice(0, 4)
+    : '—';
+  $('databanner').textContent = 'Índices atualizados até ' + _compBR
+    + (_cob.defasado ? ' (base do CJF publicada até esta competência)' : '');
   $('footSnapshot').textContent = SERIES_DATA.gerado_em;
-  $('inDataCalculo').value = hojeISO();
+  // A data do cálculo não pode nascer além do que as séries cobrem: o motor recusa (corretamente)
+  // e a tela mostraria erro no caminho mais comum do site. Mesmo critério que o `extract_refs.py`
+  // já aplica no build (`_HOJE_SMOKE`).
+  $('inDataCalculo').value = CalcEngine.dataCobertaPor(hojeISO(), _cob)
+    ? hojeISO()
+    : _ultimoDiaDaCompetencia(_cob.ultimaCompetencia);
   const c = new URLSearchParams(location.search).get('c');
   if (c){
     let s = null;
