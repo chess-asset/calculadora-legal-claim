@@ -498,7 +498,7 @@
               <span><input type="date" id="inDataConta" oninput="calcularDebounced()"></span></div>
             <div class="field"><label>Já expedido antes de 25/03/2015?<span class="help" title="Rege o trilho TR na janela F2 (modulação ADI 4.425).">i</span></label>
               <span class="checkfield"><input type="checkbox" id="inJaExpedido2015" onchange="calcular()"></span></div>
-            <div class="field"><label>Período de graça — início<span class="help" title="SV 17: juros zerados no período de graça (correção continua).">i</span></label>
+            <div class="field"><label>Período de graça — início<span class="help" title="SV 17 / Tema 1.335: no período de graça não corre juro nem Selic (nem os 2% da EC 136) — só correção monetária (IPCA-E nos meses da janela Selic).">i</span></label>
               <span><input type="date" id="inGracaInicio" oninput="calcularDebounced()"></span></div>
             <div class="field"><label>Período de graça — fim</label>
               <span><input type="date" id="inGracaFim" oninput="calcularDebounced()"></span></div>
@@ -912,7 +912,15 @@ regime na expedição. A Res. CNJ 303/2019 é régua <strong>contínua</strong> 
 publicação daquela edição da tabela, não um marco de troca de regra. A mesma régua (IPCA-E até
 nov/2021, Selic composta dali em diante) segue valendo depois de expedido o precatório, até a data do
 cálculo.</p>
-<h4>A graça — onde a maioria erra, e uma tensão que fica em aberto</h4>
+<h4>A graça — onde a maioria erra (tensão resolvida em 2026-10-01: Tema 1.335)</h4>
+<blockquote>
+<p><strong>Decisão de 2026-10-01 (Gabriel):</strong> o motor passou a aplicar o Tema 1.335 em todos os trilhos —
+dentro da graça <strong>não corre Selic</strong> (nem como juros, nem como índice), <strong>nem os 2% a.a. da EC 136</strong>,
+nem juros de mora; só correção monetária (IPCA-E da série SGS nos meses da janela Selic, flag
+<code>graca-tema-1335-sem-selic</code>). O texto abaixo registra a tensão como ela foi encontrada (TJMT) e
+fica como histórico: contas de tribunal que deixam a Selic correr na graça passam a divergir do
+motor, e a divergência é deles frente ao tema vinculante.</p>
+</blockquote>
 <p>A Súmula Vinculante 17 e o STF Tema 1.335 suspendem os <strong>juros</strong> durante o prazo constitucional de
 pagamento (o "período de graça", art. 100, §5º da CF/88) — <strong>não a correção monetária</strong>. Sob a EC
 113/2021, porém, a Selic é o <strong>índice de correção monetária</strong> (art. 21, XIII da
@@ -1240,7 +1248,10 @@ mora</strong> (Súmula Vinculante 17; positivada pela
 da <a href="https://www.planalto.gov.br/ccivil_03/constituicao/emendas/emc/emc113.htm">EC 113</a>). Dentro da graça:
 <strong>juros = 0, correção continua</strong> (Temas 450 e 1.037). <strong>A Selic não incide na graça</strong> — só correção
 (IPCA-E) — Tema 1.335 (validado no acervo interno) + RE 1.475.938. O corte de apresentação para a graça
-é <strong>por safra</strong> (<code>graca_corte_por_safra</code>): <strong>1º jul</strong> (até 2021) → <strong>2 abr</strong> (2022–2025,
+é <strong>por safra</strong> (<code>graca_corte_por_safra</code>) e o motor <strong>prevê a janela</strong> quando há <code>data_expedicao</code> e a
+graça não foi declarada (<code>prever_graca</code>; padrão da API <code>/v1/corrigir</code>, flag
+<code>graca-prevista-pela-regra-constitucional</code>): início = data de apresentação, fim = 31/12 do exercício
+de pagamento (ano+1 se apresentado até o corte, ano+2 depois). Cortes: <strong>1º jul</strong> (até 2021) → <strong>2 abr</strong> (2022–2025,
 <a href="https://www.planalto.gov.br/ccivil_03/constituicao/emendas/emc/emc114.htm">EC 114/2021</a>) → <strong>1º fev</strong>
 (2026+, EC 136). Descumprido o prazo, os juros retomam no 1º dia do exercício seguinte ao vencimento
 (RE 940.236 AgR; Rcl 13.684 AgR).</p>
@@ -1333,10 +1344,10 @@ multiplica.</p>
 <strong>Est/Mun ago/2025</strong>. Os meses pré-EC 136 (F1..F4_Selic) entram idênticos em C/G/H nas duas pernas.</p>
 <h3>Graça no expedido</h3>
 <p>Correção corre sempre, inclusive na graça; os juros do §12 (regime antigo) <strong>não</strong> correm na graça
-(art. 7º §2º da Res. CJF 983/2026 / SV 17). O <strong>2% a.a. da EC 136</strong> corre na graça (leitura recomendada
-em análise jurídica interna: a fórmula constitucional corre "até o efetivo pagamento" sem carve-out) —
-mas essa é <strong>leitura pendente</strong> e o motor a <strong>sinaliza</strong> (<code>f5-graca-2pct-leitura-pendente</code>) quando há
-mês de graça na janela.</p>
+(art. 7º §2º da Res. CJF 983/2026 / SV 17). Desde 2026-10-01 o <strong>2% a.a. da EC 136 também não corre</strong>
+na graça (Tema 1.335: "exclusivamente correção monetária"); na perna Selic do teto federal o mês de
+graça recebe só a variação do IPCA do próprio mês, e no teto estadual (Prov. 207) não há Selic
+substitutiva na graça. A flag <code>f5-graca-2pct-leitura-pendente</code> foi aposentada.</p>
 <h3>Estado desta fase — calibração SICOM pendente</h3>
 <p>A <strong>estrutura</strong> do teto está implementada e ancorada na norma. A versão anterior fixava a Selic da F5 em
 <code>0.0</code>, de modo que o teto sempre prevalecia e anulava o acréscimo — medido em −58,8% num crédito União
@@ -1619,9 +1630,14 @@ um eixo — os eixos são independentes (§2) e as flags se acumulam, nunca se s
 <td>demonstrativo SICOM/TRF real atravessando set/2025 para calibrar ao centavo</td>
 </tr>
 <tr>
-<td><code>f5-graca-2pct-leitura-pendente</code></td>
-<td>há mês de graça na janela EC 136 do expedido — o motor faz o 2% correr na graça (leitura recomendada)</td>
-<td>conta-oráculo SICOM</td>
+<td><code>graca-tema-1335-sem-selic</code></td>
+<td>há mês de graça na janela Selic — Selic retirada, correção pelo IPCA-E (série SGS)</td>
+<td>tabela do tribunal com IPCA-E na graça (a série SGS é convenção)</td>
+</tr>
+<tr>
+<td><code>graca-prevista-pela-regra-constitucional</code></td>
+<td>graça não declarada, prevista pela <code>data_expedicao</code></td>
+<td>dado dos autos (data de apresentação/inclusão orçamentária); regime especial do ente</td>
 </tr>
 <tr>
 <td><code>f5-tributario-expedido-fora-da-formula-ec136</code></td>
@@ -1866,6 +1882,25 @@ function Credito(o) {
   // campo legado (retrocompat de leitura humana em refs.json).
   var natureza_devedor = o.natureza_devedor !== undefined ? o.natureza_devedor : NaturezaDevedor.FAZENDA_DIRETA;
   var regime_ec113 = o.regime_ec113 !== undefined ? o.regime_ec113 : "indefinido";
+  // (D-163) Espelho de modelo.Credito.__post_init__: composicao pela metade nao define a fracao
+  // que rende juros; negativa nao tem sentido; e a soma tem de bater com o valor historico
+  // (tolerancia de 1 centavo -- o OR publica cifras ja arredondadas).
+  var _cp = o.composicao_principal != null ? o.composicao_principal : null;
+  var _cj = o.composicao_juros != null ? o.composicao_juros : null;
+  if ((_cp === null) !== (_cj === null)) {
+    throw new Error("composicao_principal e composicao_juros devem estar AMBOS presentes ou " +
+      "AMBOS ausentes -- uma composicao pela metade nao define a fracao que rende juros.");
+  }
+  if (_cp !== null) {
+    if (_cp < 0 || _cj < 0) {
+      throw new Error("composicao_principal/composicao_juros nao podem ser negativos.");
+    }
+    if (Math.abs(_cp + _cj - o.valor_historico) > 0.011) {
+      throw new Error("composicao nao bate com valor_historico: principal " + _cp.toFixed(2) +
+        " + juros " + _cj.toFixed(2) + " = " + (_cp + _cj).toFixed(2) + " != " +
+        Number(o.valor_historico).toFixed(2));
+    }
+  }
   return {
     valor_historico: o.valor_historico,
     data_base_correcao: o.data_base_correcao,
@@ -1926,6 +1961,10 @@ function Credito(o) {
     descontos: (o.descontos || []).map(function (d) {
       return { rotulo: d.rotulo, valor: d.valor, fonte: d.fonte != null ? d.fonte : null };
     }),
+    // (D-163) Composicao do valor_historico quando o OR discrimina principal e juros na MESMA
+    // data-base. Ambos null = comportamento de sempre (a base inteira rende juros).
+    composicao_principal: o.composicao_principal != null ? o.composicao_principal : null,
+    composicao_juros: o.composicao_juros != null ? o.composicao_juros : null,
   };
 }
 
@@ -2100,6 +2139,13 @@ class TrilhoEstadualRecusado extends Error { constructor(m) { super(m); this.nam
 // RECUSA (mesma doutrina das demais -- sem fundamento defensavel nao sai numero, aqui por RAZAO DE
 // PRODUTO: este motor e' de PRECATORIO). Espelho de correcao.DevedorForaDoRegimeDePrecatorio.
 class DevedorForaDoRegimeDePrecatorio extends Error { constructor(m) { super(m); this.name = "DevedorForaDoRegimeDePrecatorio"; } }
+// (D-163) RECUSA composicao_valor_historico + precatorio JA EXPEDIDO cruzando o marco da EC 136.
+// A decisao do Gabriel (2026-09-30) diz o que a fracao de juros recebe ate dez/2021 (so' correcao)
+// e depois (nada -- "Selic so' no principal"), mas NAO diz como ela entra nas duas pernas do teto
+// do art. 7o §3o III da Res. CJF 983/2026, onde "consolidado" e' termo da norma. Escolher aqui
+// seria o JS decidir sozinho o que o Python se recusa a decidir -- pior que divergir num numero.
+// Espelho de correcao.ComposicaoComTetoEC136NaoValidada.
+class ComposicaoComTetoEC136NaoValidada extends Error { constructor(m) { super(m); this.name = "ComposicaoComTetoEC136NaoValidada"; } }
 
 // ============================================================ E2 (trilho estadual) -- roteamento
 // Parecer trilho estadual (d): "A REGRA e' nacional; o DADO e' por tribunal." O eixo que decide o
@@ -2720,6 +2766,12 @@ function fator_correcao_mes(regime, comp, prev, base, cfg, cr) {
     return [1.0 + _exigir(base.selic_mensal, mes_anterior(comp), "selic_mensal"),
             "Selic (indice, juros do titulo)"];
   }
+  // Tema 1.335/STF (2026-10-01) -- espelho de correcao.py: mes Selic dentro da graca sai de
+  // comps_selic e corrige pelo IPCA-E (serie SGS; Res. CNJ 303 art. 21-A §5o).
+  if ((regime === "F4_SELIC" || regime === "tributario") && cr !== null && graca_ativa(comp, cr)) {
+    return [_exigir(base.ipca_e_coef, comp, "ipca_e_coef") / _exigir(base.ipca_e_coef, prev, "ipca_e_coef"),
+            "IPCA-E (graca, Tema 1.335)"];
+  }
   if (regime === "F4_SELIC" || regime === "tributario") {
     return [1.0, "Selic(soma)"];
   }
@@ -2941,6 +2993,22 @@ function _regra_e_competencia(comp, cr) {
 function _expedicao_comp(cr) {
   return cr.data_expedicao !== null ? cr.data_expedicao.slice(0, 7) : null;
 }
+// (D-163) Fracao do valor_historico que e' PRINCIPAL -- a unica que rende juros.
+// Sem composicao declarada devolve 1.0, e `x * 1.0 === x` e' identidade exata em IEEE 754:
+// e' isso que garante que o corpus ja rodado saia BIT A BIT igual. Espelho de
+// modelo.Credito.fracao_principal().
+function _fracao_principal(cr) {
+  const p = cr.composicao_principal, j = cr.composicao_juros;
+  if (p === undefined || p === null || j === undefined || j === null) return 1.0;
+  if (!cr.valor_historico) return 1.0;
+  return p / cr.valor_historico;
+}
+
+// Formatador so' para texto de flag (nunca entra em conta).
+function _fmt2(v) {
+  return Number(v).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
 function _f5_expedido(regime, comp, cr) {
   // Espelho de correcao.py::_f5_expedido (comp-aware, 2026-07-20): EC136 so' a partir do mes da
   // expedicao (comp >= expedicao). Expedido depois do corte da Selic corre por taxa_legal
@@ -3216,7 +3284,7 @@ function acumula_ec136_estadual_207(principal_corte, juros_corte, comps_ec136, b
     const S = P + J;
     const corr = S * ipca_m;
     const j2pct = Object.prototype.hasOwnProperty.call(meses_graca, comp) ? 0.0 : P * (0.02 / 12.0);
-    if (com_teto_selic) {
+    if (com_teto_selic && !Object.prototype.hasOwnProperty.call(meses_graca, comp)) {   // Tema 1.335
       const selic_m = _exigir(base.selic_mensal, mes_anterior(comp), "selic_mensal");
       if (corr + j2pct > S * selic_m) {            // IPCA+juros > Selic -> Selic substitui (§1o c)
         P *= (1 + selic_m);
@@ -3238,11 +3306,82 @@ function em_graca(comp, cr) {
   return ini <= comp && comp <= fim;
 }
 
+// ------------------------------------------------------------ previsao da janela de graca
+// Espelho de correcao.py::prever_graca. Deriva a janela do art. 100 §5o CF a partir da data de
+// APRESENTACAO/expedicao do precatorio, usando SO' a regra que o motor ja' tem (cfg.graca_corte_por_safra,
+// 3 eras confirmadas no acervo: 1o/jul ate 2021 -> 2/abr 2022-2025 (EC 114) -> 1o/fev 2026+ (EC 136)):
+//   apresentado ATE' o corte do ano  -> orcamento do ano seguinte  -> paga ate' 31/12 de ano+1;
+//   apresentado DEPOIS do corte      -> orcamento de um ano depois -> paga ate' 31/12 de ano+2.
+// Inicio da janela = a propria data de apresentacao (RE 592.869 AgR; Tema 96). Leitura confirmada
+// pelo Gabriel em 2026-10-01 (descartadas: inicio no corte do ciclo / 1o-jan do exercicio).
+// Devolve null quando nenhuma era cobre a data (apresentacao anterior a out/1988).
+function prever_graca(data_apresentacao, cfg) {
+  if (cfg === undefined || cfg === null) cfg = ConfigJuridico();
+  if (typeof data_apresentacao !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(data_apresentacao)) {
+    throw new Error("prever_graca: data de apresentacao invalida (" + data_apresentacao + "; use AAAA-MM-DD)");
+  }
+  const ym = data_apresentacao.slice(0, 7);
+  let era = null;
+  for (let i = 0; i < cfg.graca_corte_por_safra.length; i++) {
+    if (cfg.graca_corte_por_safra[i][0] <= ym) era = cfg.graca_corte_por_safra[i];
+  }
+  if (era === null) return null;
+  const ano = parseInt(data_apresentacao.slice(0, 4), 10);
+  const dm = era[1].split("-");                       // "dd-mm"
+  const corte = String(ano) + "-" + dm[1] + "-" + dm[0];
+  const exercicio = data_apresentacao <= corte ? ano + 1 : ano + 2;
+  return {
+    inicio: data_apresentacao,
+    fim: String(exercicio) + "-12-31",
+    exercicio_pagamento: exercicio,
+    corte_apresentacao: corte,
+    era_vigente_desde: era[0],
+    leitura_inicio: "apresentacao",
+  };
+}
+
+function flag_graca_prevista(g) {
+  return flag(
+    "graca-prevista-pela-regra-constitucional: o credito tem data_expedicao (" + g.inicio + ") e nao " +
+    "declara janela de graca; a janela foi PREVISTA pelo art. 100 §5o CF com o corte de apresentacao " +
+    "da era vigente desde " + g.era_vigente_desde + " (corte " + g.corte_apresentacao + "): exercicio " +
+    "de pagamento " + g.exercicio_pagamento + ", graca de " + g.inicio + " a " + g.fim + " (inicio na " +
+    "data de apresentacao, decisao de 2026-10-01; na janela nao corre juro nem Selic, so' correcao " +
+    "monetaria -- SV 17 / Temas 1.037 e 1.335). Pago fora do prazo, os juros voltam apos o fim da " +
+    "graca (Tema 1.037); o reposicionamento pos-graca (Res. CJF 983 art. 7o §§6o-7o / Prov. CNJ 207 " +
+    "§4o) nao e' modelado. Nao verifica regime especial do ente (ADCT art. 101+), onde o §5o nao " +
+    "corre igual. Havendo dado dos autos, declarar a graca."
+  );
+}
+
+function graca_ativa(comp, cr) {
+  // espelho de correcao.py::graca_ativa
+  return em_graca(comp, cr) && !cr.inadimplente && !cr.juros_exclusivamente_manuais;
+}
+
+// Espelho de correcao.py::flags_graca_sem_selic (Tema 1.335, 2026-10-01).
+function flags_graca_sem_selic(cr, comps, regimes) {
+  const meses = comps.filter(function (c) {
+    return (regimes[c] === "F4_SELIC" || regimes[c] === "tributario") && graca_ativa(c, cr);
+  });
+  if (!meses.length) return [];
+  const trib = cr.natureza === "tributario"
+    ? " Credito TRIBUTARIO: a Selic do art. 39 §4o da Lei 9.250/1995 tambem foi retirada na " +
+      "graca (leitura extensiva do Tema 1.335, que fala da Selic da EC 113)."
+    : "";
+  return [flag(
+    "graca-tema-1335-sem-selic: " + meses.length + " mes(es) de graca na janela Selic (" + meses[0] + ".." +
+    meses[meses.length - 1] + "). Tema 1.335/STF (RE 1.515.163 RG): no prazo do §5o do art. 100 a Selic NAO " +
+    "incide e o credito tem exclusivamente correcao monetaria -- o motor tirou a Selic desses " +
+    "meses (nem juros, nem indice) e corrigiu pelo IPCA-E (serie SGS; indice do art. 21-A §5o " +
+    "da Res. CNJ 303/2019). A serie usada (nacional, nao a tabela do tribunal, que congela a " +
+    "janela EC 113) e' convencao do motor; pago fora do prazo, a Selic volta apos o fim da " +
+    "graca (Tema 1.037)." + trib)];
+}
+
 function taxa_juros_mes_efetiva(regime, comp, base, cr, cfg, prev) {
+  // SV 17 / Tema 1.037 / Tema 1.335 (2026-10-01): na graca nenhum juro corre, nem o 2% EC136.
   if (em_graca(comp, cr) && !cr.inadimplente) {
-    if (_regra_ativa(regime, comp, cr) === _EC136_2PCT) {
-      return taxa_juros_mes(regime, comp, base, cr, cfg, prev);
-    }
     return 0.0;
   }
   return taxa_juros_mes(regime, comp, base, cr, cfg, prev);
@@ -3320,7 +3459,9 @@ function fase_label(regime, cr) {
   }
   return regime;
 }
-function _anota_juros_e_bases(memoria, cr, base, cfg, valor_corrigido, G, marco_ec136) {
+function _anota_juros_e_bases(memoria, cr, base, cfg, valor_corrigido, G, marco_ec136, frac_principal) {
+  // (D-163) `frac_principal` ausente => 1.0 (chamadas antigas e creditos sem composicao).
+  if (frac_principal === undefined || frac_principal === null) frac_principal = 1.0;
   const termo_c = _termo_inicial_comp(cr);
   const modo_titulo = cr.juros_exclusivamente_manuais;
   const base_mensal = modo_titulo;   // base dos juros: mes-a-mes x C_final (ver corrigir())
@@ -3333,21 +3474,22 @@ function _anota_juros_e_bases(memoria, cr, base, cfg, valor_corrigido, G, marco_
     let selic_src;
     // modo_titulo: Selic nunca e' juros (H == 0) -- nenhuma linha e' fonte Selic (espelho Python).
     if (modo_titulo) selic_src = false;
-    else if (is_prebase) selic_src = (reg === "F4_SELIC" || reg === "tributario") && c > termo_c;
+    else if (is_prebase) selic_src = (reg === "F4_SELIC" || reg === "tributario") && c > termo_c && !graca_ativa(c, cr);
     // Guard `c > termo_c` (Q10): o mes do TERMO e' EXCLUIDO da acumulacao da Selic. Espelha o
     // guard do laco principal e o do ramo is_prebase acima (e correcao.py::_anota_juros_e_bases).
     // Sem ele, na fronteira termo == data-base esta ANOTACAO imputava a competencia-base um mes
     // de Selic que o total nunca cobrou -- total certo, memoria auditavel errada.
-    else selic_src = c > termo_c && (reg === "F4_SELIC" || reg === "tributario"
+    else selic_src = c > termo_c && !graca_ativa(c, cr) && (reg === "F4_SELIC" || reg === "tributario"
       || _f5_selic_residual(reg, c, cr)
       || _f5_expedido_selic_residual(reg, c, cr, marco_ec136));
     let pre_c = 0.0, sel_c = 0.0, fn_c = 0.0;
     if (selic_src) {
       // leitura DIRETA (nao via _exigir) -- anotacao, nao consumo (ver correcao.py)
-      sel_c = (valor_corrigido + G) * base.selic_mensal[mes_anterior(c)];
+      sel_c = (valor_corrigido * frac_principal + G) * base.selic_mensal[mes_anterior(c)];
     }
     // base_mensal: base = corrigido AO FINAL do proprio mes (base_correcao_depois), nao o C final.
-    const _base_mes = base_mensal ? l.base_correcao_depois : valor_corrigido;
+    // (D-163) a base dos juros e a fracao PRINCIPAL do corrigido.
+    const _base_mes = (base_mensal ? l.base_correcao_depois : valor_corrigido) * frac_principal;
     if (reg === "F5") fn_c = _base_mes * l.taxa_juros_mes;
     else if (modo_titulo || (reg !== "F4_SELIC" && reg !== "tributario")) pre_c = _base_mes * l.taxa_juros_mes;
     acum_g += pre_c; acum_h += sel_c; acum_i += fn_c;
@@ -3365,7 +3507,7 @@ function _anota_juros_e_bases(memoria, cr, base, cfg, valor_corrigido, G, marco_
     else if (selic_src) rub = "H-selic-EC113";
     else if (pre_c !== 0.0) rub = "G-ate-2021";
     else rub = "";
-    if (rub === "H-selic-EC113") l.base_juros = valor_corrigido + G;
+    if (rub === "H-selic-EC113") l.base_juros = valor_corrigido * frac_principal + G;
     else if (pre_c !== 0.0 || fn_c !== 0.0) l.base_juros = _base_mes;
     else l.base_juros = 0.0;
     l.juros_do_mes = pre_c + sel_c + fn_c;
@@ -3499,9 +3641,9 @@ function _anota_eventos(memoria, cr, valor_entrada_selic, valor_entrada_f5, marc
       const antes = i > 0 && em_graca(memoria[i - 1].competencia, cr) && !cr.inadimplente;
       if (em && !antes) {
         l.eventos.push(
-          "Graca (art. 100 §5o CF): a partir de " + l.competencia + " os juros de mora do regime " +
-          "antigo ficam SUSPENSOS (SV 17 / Tema 1.335) ate " +
-          competencia(cr.graca_fim) + " -- a correcao monetaria continua correndo."
+          "Graca (art. 100 §5o CF): a partir de " + l.competencia + " os juros de mora, a Selic " +
+          "e o 2% da EC 136 ficam SUSPENSOS (SV 17 / Temas 1.037 e 1.335) ate " +
+          competencia(cr.graca_fim) + " -- so' a correcao monetaria continua correndo."
         );
       }
     }
@@ -3677,6 +3819,7 @@ function corrigir(cr, base, cfg) {
   };
   _pushUnique(flags_variante_tabela(cr));
   _pushUnique(flags_expedicao_sem_graca(cr));
+  _pushUnique(flags_graca_sem_selic(cr, comps, regimes));
   _pushUnique(flags_natureza_verba(cr));
   // Eixo NaturezaDevedor (2026-07-26/27): lacuna normativa do art. 3o EC113 alcancar EP/SEM
   // equiparada -- flag DISTINTA e especifica. A RECUSA do ESTATAL_CONCORRENCIAL ja levantou acima.
@@ -3811,7 +3954,7 @@ function corrigir(cr, base, cfg) {
       } else if (modo_titulo || (reg !== "F4_SELIC" && reg !== "tributario")) {
         if (base_mensal) juros_titulo_g += taxa * cr.valor_historico;
         else taxas_pre_selic += taxa;
-      } else if (c > _termo_c) {
+      } else if (c > _termo_c && !graca_ativa(c, cr)) {   // Tema 1.335: sem Selic na graca
         comps_selic_prebase.push(mes_anterior(c));
       }
       memoria.push({
@@ -3903,8 +4046,19 @@ function corrigir(cr, base, cfg) {
 
   const correcao_val = valor_corrigido - cr.valor_historico;
 
+  // (D-163) BASE DE INCIDENCIA DOS JUROS: so' a fracao PRINCIPAL do valor historico. Decisao do
+  // Gabriel 2026-09-30 -- "a parcela deve render sempre sobre principal"; na fase da EC 113
+  // "Selic so' no principal". Sem composicao declarada `_fracao_principal` devolve 1.0, e
+  // `valor_corrigido * 1.0 === valor_corrigido` e' identidade exata em IEEE 754: nenhum credito
+  // existente muda. A fracao de JUROS continua dentro de valor_corrigido (recebe correcao, que e'
+  // o que a regra manda) -- ela so' nao entra nas bases de G/H/I; e como a correcao congela na
+  // fronteira da EC 113, ela fica congelada de dez/2021 em diante.
+  // Espelho de correcao.py (mesma ordem de operacoes, para diff zero entre as implementacoes).
+  const _frac_principal = _fracao_principal(cr);
+  const base_juros_c = valor_corrigido * _frac_principal;
+
   // (G): modo_titulo acumula mes a mes em R$ (taxa x corrigido do mes); senao C x D% (CJF).
-  const G = base_mensal ? juros_titulo_g : valor_corrigido * taxas_pre_selic;
+  const G = base_mensal ? juros_titulo_g : base_juros_c * taxas_pre_selic;
 
   const marco_ec136 = _marco_ec136_comp(cr, base);
   if (cr.natureza === Natureza.TRIBUTARIO && cr.data_expedicao !== null
@@ -3937,7 +4091,8 @@ function corrigir(cr, base, cfg) {
       const c = comps[i];
       if (c > _termo_c && (regimes[c] === "F4_SELIC" || regimes[c] === "tributario"
         || _f5_selic_residual(regimes[c], c, cr)
-        || _f5_expedido_selic_residual(regimes[c], c, cr, marco_ec136))) {
+        || _f5_expedido_selic_residual(regimes[c], c, cr, marco_ec136))
+        && !graca_ativa(c, cr)) {   // Tema 1.335: sem Selic na graca
         comps_selic.push(mes_anterior(c));
       }
     }
@@ -3946,17 +4101,39 @@ function corrigir(cr, base, cfg) {
   // qualquer outra competencia F4_SELIC (mesma janela do federal/TJSP; so' a ACUMULACAO muda,
   // soma x composto -- ver `regime_selic`/`_TJS_SELIC_COMPOSTA`).
   const soma_selic = selic_soma(comps_selic, base, cfg, null, regime_selic(cr, cfg));
-  const H = (valor_corrigido + G) * soma_selic;
-  const I = base_mensal ? juros_titulo_i : valor_corrigido * taxas_fase_nova;
+  const H = (base_juros_c + G) * soma_selic;
+  const I = base_mensal ? juros_titulo_i : base_juros_c * taxas_fase_nova;
   // I_conhec: juros de taxa legal da janela de CONHECIMENTO da F5 (precatorio expedido depois do
   // corte -- `!_f5_expedido`). Integra o consolidado que ENTRA na fase EC136 (conhecimento nao tem
   // teto). Zero para expedido <= corte. Espelho de correcao.py::I_conhec.
-  const I_conhec = valor_corrigido * taxas_fase_nova_conhec;
+  const I_conhec = base_juros_c * taxas_fase_nova_conhec;
+
+  if (_frac_principal !== 1.0) {
+    flags.push(flag(
+      "composicao-base-efetiva-d163: a base dos juros foi restrita a fracao PRINCIPAL do valor " +
+      "historico (R$ " + _fmt2(cr.composicao_principal) + " de R$ " + _fmt2(cr.valor_historico) +
+      " -- " + (_frac_principal * 100).toFixed(4) + "%). A fracao de juros (R$ " +
+      _fmt2(cr.composicao_juros) + ") recebe SO' correcao monetaria e nao entra em G/H/I: sem " +
+      "juros sobre juros e sem Selic, ficando congelada na fronteira da EC 113. Regra decidida " +
+      "pelo Gabriel em 2026-09-30 (D-163). Sem a composicao declarada o motor trataria a fracao " +
+      "de juros como principal e o valor de face sairia SUPERESTIMADO."));
+  }
 
   let juros_val = G + H + I;
 
   let ajuste_teto = 0.0;
   const _tem_f5_expedido = comps.some(function (c) { return _f5_expedido(regimes[c], c, cr); });
+  // (D-163) o teto EC136 esta FORA do que a decisao cobriu -- recusa tipada em vez de numero mudo.
+  // So' morde quem declarou a composicao; sem ela, nada muda.
+  if (_tem_f5_expedido && _frac_principal !== 1.0) {
+    throw new ComposicaoComTetoEC136NaoValidada(
+      "composicao_valor_historico declarada em precatorio JA EXPEDIDO que atravessa o marco da " +
+      "EC 136 (fase F5 com teto). A regra de D-163 define o tratamento da fracao de juros ate " +
+      "dez/2021 (so' correcao) e depois (nada), mas NAO define como ela entra nas duas pernas do " +
+      "teto do art. 7o §3o III da Res. CJF 983/2026. Sem parecer sobre a composicao do " +
+      "'consolidado' do §3o III, nao ha numero defensavel. Rodar sem a composicao " +
+      "(comportamento pre-D-163) ou aguardar o parecer.");
+  }
   if (modo_titulo) {
     flags.push(flag(
       "juros-exclusivamente-do-titulo: juros do motor SUPRIMIDOS por escolha do usuario -- " +
@@ -4043,19 +4220,29 @@ function corrigir(cr, base, cfg) {
         "mas o REPOSICIONAMENTO pos-graca (§4o: base = 'valor atualizado em dezembro do ano " +
         "que deveria ter sido pago', ancora DIFERENTE da federal) NAO esta implementado -- " +
         "depende do `exercicio_de_pagamento` derivado da data de apresentacao (2/abril ate a " +
-        "EC136; 1o/fevereiro depois). Flag Tema 1.335 STF (Selic na graca) tambem em aberto. " +
-        "Confirmar antes de usar (parecer (b) item 3; PENDENCIAS.md)."
+        "EC136; 1o/fevereiro depois). Na graca o motor ja' aplica o Tema 1.335 (sem Selic " +
+        "substitutiva). Confirmar antes de usar (parecer (b) item 3; PENDENCIAS.md)."
       ));
     }
   } else if (_tem_f5_expedido && !modo_titulo) {
     const comps_selic_f5 = [];
     for (let i = 0; i < comps.length; i++) {
       const c = comps[i];
-      if (_f5_expedido(regimes[c], c, cr) && mes_anterior(c) >= marco_ec136) {
+      if (_f5_expedido(regimes[c], c, cr) && mes_anterior(c) >= marco_ec136 && !graca_ativa(c, cr)) {
         comps_selic_f5.push(mes_anterior(c));
       }
     }
-    const selic_f5 = selic_soma(comps_selic_f5, base, cfg, null, regime_selic(cr, cfg));
+    let selic_f5 = selic_soma(comps_selic_f5, base, cfg, null, regime_selic(cr, cfg));
+    // Tema 1.335 (2026-10-01) -- espelho de correcao.py: no mes de graca a perna Selic recebe so'
+    // a correcao monetaria do proprio mes (fator - 1), somada de forma simples.
+    const _fator_mes = {};
+    for (let i = 0; i < memoria.length; i++) _fator_mes[memoria[i].competencia] = memoria[i].fator_correcao_mes;
+    for (let i = 0; i < comps.length; i++) {
+      const c = comps[i];
+      if (_f5_expedido(regimes[c], c, cr) && mes_anterior(c) >= marco_ec136 && graca_ativa(c, cr)) {
+        selic_f5 += _fator_mes[c] - 1.0;
+      }
+    }
     const principal_marco = valor_entrada_f5 !== null ? valor_entrada_f5 : cr.valor_historico;
     const base_selic_f5 = principal_marco + G;
     const total_ipca_juros = valor_corrigido + juros_val;
@@ -4086,20 +4273,10 @@ function corrigir(cr, base, cfg) {
       "centavo exige demonstrativo oficial SICOM/TRF de precatorio real atravessando set/2025 " +
       "(PENDENCIAS.md 1.3). Nao usar como conta liquida sem esse batimento."
     ));
-    if (comps.some(function (c) { return _f5_expedido(regimes[c], c, cr) && em_graca(c, cr) && !cr.inadimplente; })) {
-      flags.push(flag(
-        "f5-graca-2pct-leitura-pendente: ha mes(es) de graca (§5o do art. 100 CF) dentro da " +
-        "janela EC136 deste precatorio expedido. O motor faz o 2% a.a. da EC136 CORRER na " +
-        "graca (parecer Q6(e), leitura recomendada: a formula constitucional corre 'ate o " +
-        "efetivo pagamento' sem carve-out; o §2o do art. 7o afasta so' os juros do §12 do " +
-        "art. 100 CF, regime antigo/poupanca). Tensao textual honesta (o §1o chama o 2% de " +
-        "'juros da mora') -- leitura pendente de conta-oraculo SICOM."
-      ));
-    }
   }
 
   // === MEMORIA DESCRITIVA (2026-07-17) -- anotacao 100%, NADA acima muda. Roda por ULTIMO. ===
-  _anota_juros_e_bases(memoria, cr, base, cfg, valor_corrigido, G, marco_ec136);
+  _anota_juros_e_bases(memoria, cr, base, cfg, valor_corrigido, G, marco_ec136, _frac_principal);
   _anota_eventos(memoria, cr, valor_entrada_selic, valor_entrada_f5, marco_ec136);
 
   // §0-QUATER (PENDENCIAS.md) -- FLAG AGREGADA (nao uma por competencia). Espelho de correcao.py;
@@ -4488,13 +4665,14 @@ const API = {
   classifica_trilho, _justica_estadual, _estadual, guarda_recusas_estadual, flags_trilho_estadual,
   acumula_ec136_estadual_207, _ESTADUAL_TETO_SELIC,
   SerieIncompleta, JanelaSelicNaoCongelada, NaturezaServidorNaoImplementada, PrevidenciarioAnteriorA1996,
-  TrilhoEstadualRecusado, DevedorForaDoRegimeDePrecatorio,
+  TrilhoEstadualRecusado, DevedorForaDoRegimeDePrecatorio, ComposicaoComTetoEC136NaoValidada,
   _fazenda_ec113, guarda_devedor, flags_natureza_devedor,
   _nao_fazenda_federal_geral, _nao_fazenda_juros_selic_ativo,
   ORIGENS_TAXA_VALIDAS, flags_origem_taxa, _origem_taxa_prevalece, _janela_titulo_prevalece_no_mes,
   _ORIGEM_TAXA_DEFAULT, _IDX_TITULO_CORRE_SERVIDOR, _IDX_TITULO_CORRE_IPCAE,
   classifica_regime, fator_correcao_mes,
   taxa_juros_mes, taxa_juros_mes_efetiva, selic_soma, aplica_teto_ec136, em_graca,
+  prever_graca, flag_graca_prevista, graca_ativa, flags_graca_sem_selic,
   juros_manual_no_mes, flags_natureza_verba, flags_previdenciario, flags_variante_tabela,
   flags_regra_juros, _regra_e_competencia, _f5_expedido, _f5_selic_residual, _f5_expedido_selic_residual,
   _regra_ativa, _termo_inicial_comp, _PRIMEIRO_MES, _EC136_2PCT, corrigir, honorario, agruparPorFase, honorarioResumo, handoffSimulador,
@@ -4554,6 +4732,22 @@ const COLUNA_ALIASES = {
   // no formato "indice:de:ate", separadas por "|" (ex.: "ipca_e:2016-07-29:2021-11-30"); de/ate
   // vazios = aberta naquele lado. Ausente/vazia = espinha do Manual CJF (comportamento de sempre).
   correcao_titulo: ["correcao_titulo", "correcao_do_titulo"],
+  // (D-163) Composicao do valor_historico quando o OR discrimina principal e juros na MESMA
+  // data-base. OPCIONAIS e retrocompativeis: ausentes = comportamento de sempre (a base inteira
+  // rende juros). Declarados, a fracao de juros recebe SO' correcao e fica fora das bases G/H/I.
+  composicao_principal: ["composicao_principal", "composicaoprincipal"],
+  composicao_juros: ["composicao_juros", "composicaojuros"],
+  // Graca constitucional (art. 100 §5o CF / SV 17) -- OPCIONAIS e retrocompativeis. Mesma semantica
+  // dos campos "Periodo de graca -- inicio/fim" do formulario individual (juros zero na janela,
+  // correcao segue). `graca_modo` decide o que fazer quando a janela NAO vem declarada:
+  //   vazio/ausente -> nada (comportamento de sempre do lote);
+  //   "prever"      -> com data_expedicao, a janela e' PREVISTA por engine.prever_graca (regra
+  //                    constitucional + cfg.graca_corte_por_safra) e sai flagada;
+  //   "nenhuma"     -> sem graca, explicitamente (o que a tela faz com os campos vazios).
+  // A API (/v1/corrigir) usa "prever" como default -- ver api/src/corrigir.js.
+  graca_inicio: ["graca_inicio", "periodo_de_graca_inicio"],
+  graca_fim: ["graca_fim", "periodo_de_graca_fim"],
+  graca_modo: ["graca_modo", "modo_graca"],
 };
 const CAMPOS_CANONICOS = Object.keys(COLUNA_ALIASES);
 const CAMPOS_OBRIGATORIOS = ["valor", "data_base", "data_citacao"];
@@ -4568,6 +4762,7 @@ const ORIGENS_TAXA_VALIDOS = ["convencionada", "lei_especial", "legal_repetida_n
 // da calculadora individual). Indice fora desta lista = erro de LINHA, nunca excecao no motor.
 const INDICES_CORRECAO_VALIDOS = ["ipca_e", "inpc", "igp_di", "tr", "poupanca", "selic"];
 const PREFIXO_ERRO_CORRECAO = "correcao_titulo_invalida";
+const GRACA_MODOS_VALIDOS = ["prever", "nenhuma"];
 
 // Cabecalho do modelo baixavel -- primeiro alias de cada campo, na ordem do brief. Colunas do eixo
 // NaturezaDevedor/D-098 NAO entram no modelo baixavel (ficam so' documentadas no texto da UI) para
@@ -4758,6 +4953,13 @@ function validarEConverterLinha(valoresLinha, indice, hojeISO) {
     origem_da_taxa: _campoBruto(valoresLinha, indice, "origem_da_taxa"),
     base_legal_taxa: _campoBruto(valoresLinha, indice, "base_legal_taxa"),
     correcao_titulo: _campoBruto(valoresLinha, indice, "correcao_titulo"),
+    // (D-163) sem estas duas linhas os aliases existem mas o valor nunca chega ao credito --
+    // a composicao era descartada em silencio e o motor devolvia o numero pre-D-163.
+    composicao_principal: _campoBruto(valoresLinha, indice, "composicao_principal"),
+    composicao_juros: _campoBruto(valoresLinha, indice, "composicao_juros"),
+    graca_inicio: _campoBruto(valoresLinha, indice, "graca_inicio"),
+    graca_fim: _campoBruto(valoresLinha, indice, "graca_fim"),
+    graca_modo: _campoBruto(valoresLinha, indice, "graca_modo"),
   };
 
   const erros = [];
@@ -4884,6 +5086,49 @@ function validarEConverterLinha(valoresLinha, indice, hojeISO) {
   const corrTit = parseCorrecaoTitulo(entradaBruta.correcao_titulo);
   if (!corrTit.ok) Array.prototype.push.apply(erros, corrTit.erros);
 
+  // (D-163) composicao da base: ambos ou nenhum, nao-negativos, e a soma tem de bater com o valor
+  // historico (tolerancia de 1 centavo -- o OR publica cifras ja arredondadas). Espelho da
+  // validacao de modelo.Credito.__post_init__.
+  let compPrincipal = null, compJuros = null;
+  const _cpBruto = (entradaBruta.composicao_principal || "").trim();
+  const _cjBruto = (entradaBruta.composicao_juros || "").trim();
+  if (_cpBruto !== "" || _cjBruto !== "") {
+    if (_cpBruto === "" || _cjBruto === "") {
+      erros.push("composicao_principal e composicao_juros devem estar AMBOS presentes ou AMBOS ausentes");
+    } else {
+      const _cp = parseNumeroFlexivel(_cpBruto), _cj = parseNumeroFlexivel(_cjBruto);
+      if (_cp === null || _cj === null) {
+        erros.push("composicao_principal/composicao_juros: valores numericos invalidos");
+      } else if (_cp < 0 || _cj < 0) {
+        erros.push("composicao_principal/composicao_juros nao podem ser negativos");
+      } else if (Math.abs(_cp + _cj - valor) > 0.011) {
+        erros.push("composicao nao bate com o valor historico: principal " + _cp.toFixed(2) +
+                   " + juros " + _cj.toFixed(2) + " = " + (_cp + _cj).toFixed(2) +
+                   " != " + Number(valor).toFixed(2));
+      } else { compPrincipal = _cp; compJuros = _cj; }
+    }
+  }
+
+  // Graca: ambos ou nenhum (mesma regra da tela -- index.html "inicio E fim preenchidos"), datas
+  // validas, fim >= inicio. Declarada, prevalece sobre qualquer graca_modo.
+  let gracaInicio = null, gracaFim = null;
+  const _gi = entradaBruta.graca_inicio, _gf = entradaBruta.graca_fim;
+  if (_gi !== "" || _gf !== "") {
+    if (_gi === "" || _gf === "") {
+      erros.push("graca_inicio e graca_fim devem estar AMBOS presentes ou AMBOS ausentes");
+    } else if (!dataValidaISO(_gi)) {
+      erros.push('graca_inicio invalida ("' + _gi + '"; use AAAA-MM-DD)');
+    } else if (!dataValidaISO(_gf)) {
+      erros.push('graca_fim invalida ("' + _gf + '"; use AAAA-MM-DD)');
+    } else if (_gf < _gi) {
+      erros.push("graca_fim (" + _gf + ") anterior a graca_inicio (" + _gi + ")");
+    } else { gracaInicio = _gi; gracaFim = _gf; }
+  }
+  const gracaModo = (entradaBruta.graca_modo || "").trim().toLowerCase();
+  if (gracaModo !== "" && GRACA_MODOS_VALIDOS.indexOf(gracaModo) === -1) {
+    erros.push('graca_modo desconhecido ("' + entradaBruta.graca_modo + '"; use prever/nenhuma)');
+  }
+
   if (erros.length) return { ok: false, erro: erros.join("; "), entradaBruta: entradaBruta };
 
   if (entradaBruta.data_base > dataCalculo) erros.push("data-base posterior a data do calculo");
@@ -4896,6 +5141,7 @@ function validarEConverterLinha(valoresLinha, indice, hojeISO) {
     honorarioPct: honorarioPct,
     honorarioBase: honorarioBase,
     honorarioModo: honorarioModo,
+    gracaModo: gracaModo,
     credito: {
       valor_historico: valor,
       data_base_correcao: entradaBruta.data_base,
@@ -4912,8 +5158,37 @@ function validarEConverterLinha(valoresLinha, indice, hojeISO) {
       data_expedicao: dataExpedicao,
       juros_manuais: jurosManuais,
       correcao_do_titulo: corrTit.janelas,
+      composicao_principal: compPrincipal,
+      composicao_juros: compJuros,
+      graca_inicio: gracaInicio,
+      graca_fim: gracaFim,
     },
   };
+}
+
+// Resolve a graca da linha ja' validada: DECLARADA (campos preenchidos), PREVISTA (graca_modo
+// "prever" + data_expedicao, via engine.prever_graca) ou nenhuma. Muta `conv.credito` so' no caso
+// previsto. Devolve o descritivo que viaja na resposta da API e no CSV de saida.
+function resolverGraca(conv, E, cfg) {
+  const cr = conv.credito;
+  if (cr.graca_inicio !== null && cr.graca_fim !== null) {
+    return { origem: "declarada", inicio: cr.graca_inicio, fim: cr.graca_fim };
+  }
+  if (conv.gracaModo === "prever" && cr.data_expedicao !== null) {
+    const g = E.prever_graca(cr.data_expedicao, cfg);
+    if (g !== null) {
+      cr.graca_inicio = g.inicio;
+      cr.graca_fim = g.fim;
+      return { origem: "prevista", inicio: g.inicio, fim: g.fim,
+               exercicio_pagamento: g.exercicio_pagamento, corte_apresentacao: g.corte_apresentacao,
+               era_vigente_desde: g.era_vigente_desde, leitura_inicio: g.leitura_inicio,
+               flag: E.flag_graca_prevista(g) };
+    }
+    return { origem: "nenhuma", inicio: null, fim: null,
+             motivo: "data_expedicao anterior a toda era de graca_corte_por_safra" };
+  }
+  return { origem: "nenhuma", inicio: null, fim: null,
+           motivo: cr.data_expedicao === null ? "sem data_expedicao" : "graca nao declarada" };
 }
 
 // ============================================================ orquestracao do lote
@@ -4941,8 +5216,13 @@ function processarLote(csvTexto, E, base, cfg, hojeISO) {
           credito: null, resultado: null, honorario: null, honorarioPct: null,
         };
       } else {
+        let graca = null;
         try {
+          graca = resolverGraca(conv, E, cfg);
           const resultado = E.corrigir(conv.credito, base, cfg);
+          // A flag da graca PREVISTA e' do lote (o motor so' ve uma janela comum); entra junto das
+          // do motor para a linha nao sair como `ok` limpa -- a previsao e' leitura juridica.
+          if (graca.origem === "prevista") resultado.flags_pendentes.push(graca.flag);
           let hon = null;
           if (conv.honorarioPct !== null && conv.honorarioPct > 0) {
             hon = E.honorario(conv.honorarioPct / 100, [resultado], conv.honorarioBase);
@@ -4950,13 +5230,14 @@ function processarLote(csvTexto, E, base, cfg, hojeISO) {
           linhaResultado = {
             numero: numero, status: "ok", mensagem: "", entradaBruta: conv.entradaBruta,
             credito: conv.credito, resultado: resultado, honorario: hon, honorarioPct: conv.honorarioPct,
-            honorarioBase: conv.honorarioBase, honorarioModo: conv.honorarioModo,
+            honorarioBase: conv.honorarioBase, honorarioModo: conv.honorarioModo, graca: graca,
           };
         } catch (eEngine) {
           linhaResultado = {
             numero: numero, status: "recusado", mensagem: "[" + eEngine.name + "] " + eEngine.message,
             entradaBruta: conv.entradaBruta, credito: conv.credito, resultado: null, honorario: null,
             honorarioPct: conv.honorarioPct, honorarioModo: (conv && conv.honorarioModo) || "adicionado",
+            graca: graca,
           };
         }
       }
@@ -5018,6 +5299,8 @@ const CSV_RESULTADO_HEADER = [
   "natureza_devedor", "regime_ec113", "fundamento_regime", "origem_da_taxa",
   // D-099 -- eco da entrada, ao FINAL (mesma regra: nao deslocar coluna existente).
   "correcao_titulo",
+  // Graca (art. 100 §5o) -- ao FINAL (mesma regra). origem: declarada | prevista | nenhuma.
+  "graca_origem", "graca_inicio", "graca_fim",
 ];
 
 function gerarCSVResultado(resultadoLote) {
@@ -5045,6 +5328,7 @@ function gerarCSVResultado(resultadoLote) {
       r ? _csvTxt(flagsSemPrefixo(r.flags_pendentes).join(" | ")) : "",
       eb.natureza_devedor || "", eb.regime_ec113 || "", _csvTxt(eb.fundamento_regime) || "", eb.origem_da_taxa || "",
       _csvTxt(eb.correcao_titulo) || "",
+      l.graca ? l.graca.origem : "", (l.graca && l.graca.inicio) || "", (l.graca && l.graca.fim) || "",
     ];
     linhasCsv.push(campos.join(";"));
   });
@@ -5061,7 +5345,7 @@ const LOTE_API = {
   COLUNA_ALIASES, CAMPOS_CANONICOS, CAMPOS_OBRIGATORIOS, COLUNAS_MODELO,
   ENTES_VALIDOS, TIPO_RELACAO_VALIDOS, NATUREZA_VERBA_VALIDOS,
   NATUREZA_DEVEDOR_VALIDOS, REGIME_EC113_VALIDOS, ORIGENS_TAXA_VALIDOS,
-  INDICES_CORRECAO_VALIDOS, PREFIXO_ERRO_CORRECAO, parseCorrecaoTitulo,
+  INDICES_CORRECAO_VALIDOS, PREFIXO_ERRO_CORRECAO, parseCorrecaoTitulo, GRACA_MODOS_VALIDOS, resolverGraca,
   detectarSeparador, parseLinhasBrutas, parseNumeroFlexivel, parseBooleano, dataValidaISO,
   flagsSemPrefixo, parseCabecalho, validarEConverterLinha, processarLote,
   gerarCSVModelo, gerarCSVResultado,
